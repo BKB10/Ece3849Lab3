@@ -60,3 +60,14 @@ void DrawGame(const SnakeGameState* state)
 #endif
 }
 
+/*
+* Function to display the score on the LCD
+*/
+void DrawScore(uint8_t score) {
+    char str[10];
+    snprint9(str, sizeof(str), "%0u", score);
+
+    GrContextForegroundSet(&gContext, ClrYellow);
+    GrStringDrawCentered(&gContext, "STOPWATCH", -1, 64, 15, false);
+}
+

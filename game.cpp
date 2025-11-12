@@ -79,3 +79,23 @@ void moveSnake()
     }
 }
 
+/*************************** SCORING SYSTEM ************************ */
+uint8_t score = 0;      // Init. to 0
+bool isEaten = 0;
+
+bool fruitEaten(void) {
+    // Check with the fruit spawn API 
+    return isEaten;
+}
+
+void incrScore(bool isEaten, uint8_t score) {
+    if (isEaten) score++;
+}
+
+void incrLen(bool isEaten, uint8_t snakeLength) {
+    if (isEaten && snakeLength < MAX_LEN) {
+        snake[snakeLength] = snake[snakeLength - 1];        // Duplicate the tail segment
+
+        snakeLength++;      // Increas length
+    }
+}

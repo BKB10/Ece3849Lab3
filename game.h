@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+/********************** SNACK GENERATION AND MOVEMENT ****************** */
 #include <stdlib.h>
 #include <vector>
 
@@ -28,6 +30,18 @@ typedef struct { uint8_t x, y; } Position;
 // Snake representation
 extern Position snake[MAX_LEN];
 extern uint8_t snakeLength;
+
+// Basic API
+void ResetGame(void);
+void moveSnake(void);
+
+/****************** SCORE SYSTEM API ************************* */
+extern uint8_t score;           // Keep track of score --- MAX_SCORE = 256?
+extern bool isEaten;
+
+bool fruitEaten(void);              // Check if fruit is eaten
+void incrScore(bool, uint8_t);      // Increase score once the fruit is eaten
+void incrLen(bool, uint8_t);        // Increase snake lenght once the fruit is eaten
 
 extern Position fruit[MAX_LEN];
 extern uint8_t fruitSize;
