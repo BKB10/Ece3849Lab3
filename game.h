@@ -39,9 +39,7 @@ void moveSnake(void);
 extern uint8_t score;           // Keep track of score --- MAX_SCORE = 256?
 extern bool isEaten;
 
-bool fruitEaten(void);              // Check if fruit is eaten
-void incrScore(bool, uint8_t);      // Increase score once the fruit is eaten
-void incrLen(bool, uint8_t);        // Increase snake lenght once the fruit is eaten
+void eatFruit(uint8_t i);      // Increase score once the fruit is eaten
 
 extern Position fruit[MAX_LEN];
 extern uint8_t fruitSize;

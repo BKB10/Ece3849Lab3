@@ -9,6 +9,8 @@ uint8_t snakeLength = 4; // Start with a snake length of 4
 Position fruit[MAX_LEN];
 uint8_t fruitSize = 0;
 
+uint8_t score = 0;
+
 // If the coordinate goes below 0, move it to GRID_SIZE - 1.
 // If the coordinate reaches GRID_SIZE, move it back to 0.
 // Notes:
@@ -16,7 +18,7 @@ uint8_t fruitSize = 0;
 //    To avoid underflow side effects, we check bounds before increment/decrement.
 
 void generateFruitTick() {
-    while(rand() < RAND_MAX / 6) {
+    while(rand() < RAND_MAX / 10) {
         fruit[fruitSize++] = Position{rand() % GRID_SIZE, rand() % GRID_SIZE};
     }
 }
@@ -35,6 +37,17 @@ void ResetGame(void)
     gameState.currentDirection = RIGHT;
     gameState.isRunning = true;
     gameState.needsReset = false;
+}
+
+void eatFruit(uint8_t fruitIndex) {
+    snakeLength++;
+    score++;
+
+    fruitSize --;
+    //Shift down
+    for(int i = fruitIndex; i < fruitSize; i ++) {
+        fruit[i] = fruit[i + 1];
+    }
 }
 
 void moveSnake()
@@ -77,25 +90,11 @@ void moveSnake()
             }
             break;
     }
-}
 
-/*************************** SCORING SYSTEM ************************ */
-uint8_t score = 0;      // Init. to 0
-bool isEaten = 0;
-
-bool fruitEaten(void) {
-    // Check with the fruit spawn API 
-    return isEaten;
-}
-
-void incrScore(bool isEaten, uint8_t score) {
-    if (isEaten) score++;
-}
-
-void incrLen(bool isEaten, uint8_t snakeLength) {
-    if (isEaten && snakeLength < MAX_LEN) {
-        snake[snakeLength] = snake[snakeLength - 1];        // Duplicate the tail segment
-
-        snakeLength++;      // Increas length
+    //Check if head is covering fruit
+    for(int i = 0; i < fruitSize; i ++) {
+        if(snake[0].x == fruit[i].x && snake[0].y == fruit[i].y) {
+            eatFruit(i);
+        }
     }
 }

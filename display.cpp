@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 
 extern "C" {
 #include "Crystalfontz128x128_ST7735.h"
@@ -39,6 +40,17 @@ void drawFruit() {
     }
 }
 
+/*
+* Function to display the score on the LCD
+*/
+void DrawScore(uint8_t score) {
+    char str[10];
+    snprintf(str, sizeof(str), "%0u", score);
+
+    GrContextForegroundSet(&gContext, ClrYellow);
+    GrStringDrawCentered(&gContext, str, -1, 64, 15, false);
+}
+
 void DrawGame(const SnakeGameState* state)
 {
     (void)state; // not used for minimal version yet
@@ -55,19 +67,10 @@ void DrawGame(const SnakeGameState* state)
 
     drawFruit();
 
+    DrawScore(score);
+
 #ifdef GrFlush
     GrFlush(&gContext);
 #endif
-}
-
-/*
-* Function to display the score on the LCD
-*/
-void DrawScore(uint8_t score) {
-    char str[10];
-    snprint9(str, sizeof(str), "%0u", score);
-
-    GrContextForegroundSet(&gContext, ClrYellow);
-    GrStringDrawCentered(&gContext, "STOPWATCH", -1, 64, 15, false);
 }
 
