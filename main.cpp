@@ -83,6 +83,8 @@ int main(void)
     xTaskCreate(vSnakeTask,  "Snake",  512, NULL, 2, NULL);
     xTaskCreate(vRenderTask, "Render", 1024, NULL, 1, NULL);
 
+    srand(gSysClk * 1000000);
+
     vTaskStartScheduler();
 
     while (1);

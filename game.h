@@ -15,6 +15,7 @@ typedef struct SnakeGameState {
     Direction currentDirection;
     bool isRunning;
     bool needsReset;
+    bool lose;
 } SnakeGameState;
 
 extern SnakeGameState gameState;

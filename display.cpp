@@ -65,7 +65,7 @@ void DrawGame(const SnakeGameState* state)
     GrContextForegroundSet(&gContext, ClrBlack);
     GrRectFill(&gContext, &full);
 
-    if(!state->isRunning) {
+    if(state->lose) {
         drawGameOver();
     } else {
         // Draw snake

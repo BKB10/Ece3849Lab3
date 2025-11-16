@@ -1,7 +1,7 @@
 #include "game.h"
 
 // Global state definitions
-SnakeGameState gameState = { RIGHT, true, false };
+SnakeGameState gameState = { RIGHT, true, false, false };
 
 Position snake[MAX_LEN];
 uint8_t snakeLength = 4; // Start with a snake length of 4
@@ -18,14 +18,15 @@ uint8_t score = 0;
 //    To avoid underflow side effects, we check bounds before increment/decrement.
 
 void generateFruitTick() {
-    while(rand() < RAND_MAX / 10) {
+    while(gameState.isRunning && rand() < RAND_MAX / 10) {
         fruit[fruitSize++] = Position{rand() % GRID_SIZE, rand() % GRID_SIZE};
     }
 }
 
-void ResetGame(void)
+void ResetGame()
 {
     // Place snake centered, heading right
+    fruitSize = 0;
     snakeLength = 4;
     uint8_t cx = GRID_SIZE / 2;
     uint8_t cy = GRID_SIZE / 2;
@@ -37,6 +38,9 @@ void ResetGame(void)
     gameState.currentDirection = RIGHT;
     gameState.isRunning = true;
     gameState.needsReset = false;
+    gameState.lose = false;
+
+    score = 0;
 }
 
 void eatFruit(uint8_t fruitIndex) {
@@ -62,6 +66,7 @@ bool isColliding() {
 
 void moveSnake()
 {
+    if(gameState.isRunning && !gameState.lose) {
         // Shift body so each segment follows the previous one
         for (uint8_t i = snakeLength; i > 0; i--) {
             snake[i] = snake[i - 1];
@@ -102,7 +107,7 @@ void moveSnake()
         }
 
         if(isColliding()) {
-            gameState.isRunning = false;
+            gameState.lose = true;
         } else {
             //Check if head is covering fruit
             for(int i = 0; i < fruitSize; i ++) {
@@ -111,4 +116,5 @@ void moveSnake()
                 }
             }
         }
+    }
 }
