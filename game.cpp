@@ -1,4 +1,5 @@
 #include "game.h"
+#include "buzzer.h"
 
 // Global state definitions
 SnakeGameState gameState = { RIGHT, true, false, false };
@@ -46,6 +47,7 @@ void ResetGame()
 void eatFruit(uint8_t fruitIndex) {
     snakeLength++;
     score++;
+    Buzzer_Post(1500, 100); // Play a short beep on eating fruit
 
     fruitSize --;
     //Shift down

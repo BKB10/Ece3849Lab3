@@ -27,13 +27,21 @@ extern "C" {
 #define BUZZER_OUTNUM      PWM_OUT_1
 #define BUZZER_OUTBIT      PWM_OUT_1_BIT
 
+static QueueHandle_t xBuzzerQueue;
+
+// Structure to define a buzzer sound event
+typedef struct {
+    uint16_t frequency;   // Frequency in Hz
+    uint16_t duration;    // Duration in milliseconds
+} BuzzerEvent;
+
 static uint32_t buzzerSysClk = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN |
                                       SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480), 120000000);
 
 /*
-This function initializes the buzzer 
+This function initializes the buzzer HW
  */
-void buzzerInit()
+void buzzer_HW_Init()
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
@@ -47,9 +55,7 @@ void buzzerInit()
 }
 
 
-/*
-This function generates a sound from the buzzer
-*/
+// This function generates a sound from the buzzer
 void buzzerStart(uint16_t freq_hz)
 {
     if (freq_hz == 0) return;
@@ -64,6 +70,21 @@ void buzzerStart(uint16_t freq_hz)
     PWMGenEnable(BUZZER_PWM_BASE, BUZZER_GEN);
 }
 
+// Stop the buzzer
 void buzzerStop() {
     PWMOutputState(BUZZER_PWM_BASE, BUZZER_OUTBIT, false);
+}
+
+// Init the buzzer and create the queue for buzzer event
+void Buzzer_Init(void) {
+    buzzer_HW_Init();
+
+    xBuzzerQueue = xQueueCreate(4, sizeof(BuzzerEvent));
+}
+
+// Play the actual sound
+void Buzzer_Post(uint16_t frequency, uint16_t durationMS) {
+    BuzzerEvent event = {frequency, durationMS};
+    
+    xQueueSend(xBuzzerQueue, &event, 0);
 }
