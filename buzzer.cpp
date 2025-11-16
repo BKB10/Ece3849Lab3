@@ -15,25 +15,19 @@ extern "C" {
 #include "driverlib/timer.h"
 #include "inc/hw_ints.h"
 
+#include "buzzer.h"
+
 }
 
-#include "button.h"
-#include "timerLib.h"
-#include "elapsedTime.h"
+//#include "button.h"
+//#include "timerLib.h"
+//#include "elapsedTime.h"
 
 // Buzzer driven by PWM0 Generator 0, Output 1
 #define BUZZER_PWM_BASE    PWM0_BASE
 #define BUZZER_GEN         PWM_GEN_0
 #define BUZZER_OUTNUM      PWM_OUT_1
 #define BUZZER_OUTBIT      PWM_OUT_1_BIT
-
-static QueueHandle_t xBuzzerQueue;
-
-// Structure to define a buzzer sound event
-typedef struct {
-    uint16_t frequency;   // Frequency in Hz
-    uint16_t duration;    // Duration in milliseconds
-} BuzzerEvent;
 
 static uint32_t buzzerSysClk = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN |
                                       SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480), 120000000);
@@ -78,13 +72,4 @@ void buzzerStop() {
 // Init the buzzer and create the queue for buzzer event
 void Buzzer_Init(void) {
     buzzer_HW_Init();
-
-    xBuzzerQueue = xQueueCreate(4, sizeof(BuzzerEvent));
-}
-
-// Play the actual sound
-void Buzzer_Post(uint16_t frequency, uint16_t durationMS) {
-    BuzzerEvent event = {frequency, durationMS};
-    
-    xQueueSend(xBuzzerQueue, &event, 0);
 }

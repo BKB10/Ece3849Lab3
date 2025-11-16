@@ -1,5 +1,8 @@
 #include "game.h"
+
+extern "C" {
 #include "buzzer.h"
+}
 
 // Global state definitions
 SnakeGameState gameState = { RIGHT, true, false, false };
@@ -18,9 +21,30 @@ uint8_t score = 0;
 //  - We use uint8_t; subtracting 1 from 0 would underflow to 255.
 //    To avoid underflow side effects, we check bounds before increment/decrement.
 
+extern void Buzzer_Post(uint16_t, uint16_t);
+
+uint8_t generatedX;
+uint8_t generatedY;
+
+bool positionHasSnake(uint8_t x, uint8_t y) {
+    for(int i = 0; i < snakeLength; i ++) {
+        if(snake[i].x == x && snake[i].y == y) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void generateFruitTick() {
+    generatedX = rand() % GRID_SIZE;
+    generatedY = rand() % GRID_SIZE;
     while(gameState.isRunning && rand() < RAND_MAX / 10) {
-        fruit[fruitSize++] = Position{rand() % GRID_SIZE, rand() % GRID_SIZE};
+        if(!positionHasSnake(generatedX, generatedY)) {
+            xSemaphoreTake(fruitMutex, portMAX_DELAY);
+            fruit[fruitSize++] = Position{generatedX, generatedY};
+            xSemaphoreGive(fruitMutex);
+        }
     }
 }
 
@@ -49,11 +73,13 @@ void eatFruit(uint8_t fruitIndex) {
     score++;
     Buzzer_Post(1500, 100); // Play a short beep on eating fruit
 
+    xSemaphoreTake(fruitMutex, portMAX_DELAY);
     fruitSize --;
     //Shift down
     for(int i = fruitIndex; i < fruitSize; i ++) {
         fruit[i] = fruit[i + 1];
     }
+    xSemaphoreGive(fruitMutex);
 }
 
 bool isColliding() {
@@ -81,7 +107,7 @@ void moveSnake()
                 if (snake[0].y == 0) {
                     snake[0].y = (uint8_t)(GRID_SIZE - 1);
                 } else {
-                    snake[0].y = (uint8_t)(snake[0].y - 1);
+                    snake[0].y -= 1;
                 }
                 break;
             case DOWN:
@@ -89,27 +115,31 @@ void moveSnake()
                 if (snake[0].y == GRID_SIZE - 1) {
                     snake[0].y = 0;
                 } else {
-                    snake[0].y = (uint8_t)(snake[0].y + 1);
+                    snake[0].y += 1;
                 }
                 break;
             case LEFT:
                 if (snake[0].x == 0) {
                     snake[0].x = (uint8_t)(GRID_SIZE - 1);
                 } else {
-                    snake[0].x = (uint8_t)(snake[0].x - 1);
+                    snake[0].x -= 1;
                 }
                 break;
             case RIGHT:
                 if (snake[0].x == GRID_SIZE - 1) {
                     snake[0].x = 0;
                 } else {
-                    snake[0].x = (uint8_t)(snake[0].x + 1);
+                    snake[0].x += 1;
                 }
                 break;
         }
 
         if(isColliding()) {
             gameState.lose = true;
+            Buzzer_Post(3000, 150);
+            Buzzer_Post(2500, 150);
+            Buzzer_Post(3000, 150);
+            Buzzer_Post(2500, 150);
         } else {
             //Check if head is covering fruit
             for(int i = 0; i < fruitSize; i ++) {

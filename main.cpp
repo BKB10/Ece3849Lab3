@@ -13,14 +13,16 @@ extern "C" {
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+
+#include "buzzer.h"
 }
 
 // Board drivers (provided in project includes)
 #include "button.h"
 #include "joystick.h"
-// Buzzer
-#include "buzzer.h"
-extern QueueHandle_t xBuzzerQueue;
+
+
+//extern QueueHandle_t xBuzzerQueue;
 
 // App modules per lab structure
 #include "app_objects.h"
@@ -37,12 +39,13 @@ static Button btnReset(S2);
 // Joystick (axes + stick push). Pins from HAL pins.h (BOOSTERPACK1)
 static Joystick gJoystick(JSX, JSY, JS1);
 
-// Buzzer
-//SemaphoreHandle_t xMutexLcd;
+SemaphoreHandle_t fruitMutex;
 
 // Config
 #define INPUT_TICK_MS   10U
 #define FRUIT_TICK_MS   250U
+
+static QueueHandle_t gBuzzerQueue;
 
 // Prototypes
 static void configureSystemClock(void);
@@ -50,6 +53,13 @@ static void vFruitTask(void* args);
 static void vInputTask(void *pvParameters);
 static void vSnakeTask(void *pvParameters);
 static void vRenderTask(void *pvParameters);
+static void vBuzzerTask(void* pvParameters);
+
+void Buzzer_Post(uint16_t frequency, uint16_t durationMS) {
+    BuzzerEvent event = {frequency, durationMS};
+
+    xQueueSend(gBuzzerQueue, &event, 0);
+}
 
 int main(void)
 {
@@ -59,12 +69,10 @@ int main(void)
 
     configureSystemClock();
 
-    /*
-    xMutexLcd = xSemaphoreCreateMutex();
-    if(!xMutexLcd) {
+    fruitMutex = xSemaphoreCreateMutex();
+    if(!fruitMutex) {
         while(1);
     }
-    */
 
 
     // Init buttons and joystick
@@ -84,11 +92,13 @@ int main(void)
     IntMasterEnable();
 
     // Create tasks (priorities per lab suggestion)
-    xTaskCreate(vFruitTask, "Fruit", 1024, NULL, 3, NULL);
+    xTaskCreate(vFruitTask, "Fruit", 512, NULL, 1, NULL);
     xTaskCreate(vInputTask,  "Input",  512, NULL, 2, NULL);
-    xTaskCreate(vSnakeTask,  "Snake",  512, NULL, 2, NULL);
+    xTaskCreate(vSnakeTask,  "Snake",  512, NULL, 3, NULL);
     xTaskCreate(vRenderTask, "Render", 1024, NULL, 1, NULL);
-    xTaskCreate(vBuzzerTask, "Buzzer", 512, NULL, 2, NULL);
+    xTaskCreate(vBuzzerTask, "Buzzer", 512, NULL, 1, NULL);
+
+    gBuzzerQueue = xQueueCreate(4, sizeof(BuzzerEvent));
 
     srand(gSysClk * 1000000);
 
@@ -137,22 +147,55 @@ static void vInputTask(void *pvParameters)
         }
 
         // Joystick 8-way direction mapping to game directions
+        int8_t testPos;
         switch (gJoystick.direction8()) {
             case JoystickDir::N:
             case JoystickDir::NE:
             case JoystickDir::NW:
-                gameState.currentDirection = UP;
+                testPos = snake[0].y - 1;
+                if(testPos < 0) {
+                    testPos = GRID_SIZE - 1;
+                } else if(testPos > GRID_SIZE - 1) {
+                    testPos = 0;
+                }
+                if(!positionHasSnake(snake[0].x, testPos)) {
+                    gameState.currentDirection = UP;
+                }
                 break;
             case JoystickDir::S:
             case JoystickDir::SE:
             case JoystickDir::SW:
-                gameState.currentDirection = DOWN;
+                testPos = snake[0].y + 1;
+                if(testPos < 0) {
+                    testPos = GRID_SIZE - 1;
+                } else if(testPos > GRID_SIZE - 1) {
+                    testPos = 0;
+                }
+                if(!positionHasSnake(snake[0].x, testPos)) {
+                    gameState.currentDirection = DOWN;
+                }
                 break;
             case JoystickDir::E:
-                gameState.currentDirection = RIGHT;
+                testPos = snake[0].x + 1;
+                if(testPos < 0) {
+                    testPos = GRID_SIZE - 1;
+                } else if(testPos > GRID_SIZE - 1) {
+                    testPos = 0;
+                }
+                if(!positionHasSnake(testPos, snake[0].y)) {
+                    gameState.currentDirection = RIGHT;
+                }
                 break;
             case JoystickDir::W:
-                gameState.currentDirection = LEFT;
+                testPos = snake[0].x - 1;
+                if(testPos < 0) {
+                    testPos = GRID_SIZE - 1;
+                } else if(testPos > GRID_SIZE - 1) {
+                    testPos = 0;
+                }
+                if(!positionHasSnake(testPos, snake[0].y)) {
+                    gameState.currentDirection = LEFT;
+                }
                 break;
             case JoystickDir::Center:
             default:
@@ -202,11 +245,11 @@ static void vBuzzerTask(void* pvParameters)
 
     for(;;)
     {
-        if (xQueueReceive(xBuzzerQueue, &event, portMAX_DELAY) == pdTRUE)
+        if(xQueueReceive(gBuzzerQueue, &event, portMAX_DELAY) == pdTRUE)
         {
-            Buzzer_Start(event.frequency);
+            buzzerStart(event.frequency);
             vTaskDelay(pdMS_TO_TICKS(event.duration));
-            Buzzer_Stop();
+            buzzerStop();
         }
     }
 }

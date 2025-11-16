@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 // Direction for snake movement
 typedef enum { UP, DOWN, LEFT, RIGHT } Direction;
 
@@ -43,11 +46,14 @@ void eatFruit(uint8_t i);      // Increase score once the fruit is eaten
 
 extern Position fruit[MAX_LEN];
 extern uint8_t fruitSize;
+extern SemaphoreHandle_t fruitMutex;
 
 void generateFruitTick();
 
 // Basic API
 void ResetGame(void);
 void moveSnake(void);
+
+bool positionHasSnake(uint8_t, uint8_t);
 
 bool isColliding();
