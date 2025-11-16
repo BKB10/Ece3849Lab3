@@ -18,6 +18,9 @@ extern "C" {
 // Board drivers (provided in project includes)
 #include "button.h"
 #include "joystick.h"
+// Buzzer
+#include "buzzer.h"
+extern QueueHandle_t xBuzzerQueue;
 
 // App modules per lab structure
 #include "app_objects.h"
@@ -34,6 +37,7 @@ static Button btnReset(S2);
 // Joystick (axes + stick push). Pins from HAL pins.h (BOOSTERPACK1)
 static Joystick gJoystick(JSX, JSY, JS1);
 
+// Buzzer
 //SemaphoreHandle_t xMutexLcd;
 
 // Config
@@ -75,6 +79,8 @@ int main(void)
     // Optional joystick tuning
     gJoystick.setDeadzone(0.15f);
 
+    Buzzer_Init();      // Init buzzer
+
     IntMasterEnable();
 
     // Create tasks (priorities per lab suggestion)
@@ -82,6 +88,7 @@ int main(void)
     xTaskCreate(vInputTask,  "Input",  512, NULL, 2, NULL);
     xTaskCreate(vSnakeTask,  "Snake",  512, NULL, 2, NULL);
     xTaskCreate(vRenderTask, "Render", 1024, NULL, 1, NULL);
+    xTaskCreate(vBuzzerTask, "Buzzer", 512, NULL, 2, NULL);
 
     srand(gSysClk * 1000000);
 
@@ -121,10 +128,12 @@ static void vInputTask(void *pvParameters)
         // Toggle pause on S1
         if (btnPause.wasPressed()) {
             gameState.isRunning = !gameState.isRunning;
+            Buzzer_Post(440, 250);      // Play sound
         }
         // Request reset on S2
         if (btnReset.wasPressed()) {
             gameState.needsReset = true;
+            Buzzer_Post(850, 250);     // Play sound
         }
 
         // Joystick 8-way direction mapping to game directions
@@ -183,5 +192,21 @@ static void vRenderTask(void *pvParameters)
         DrawGame(&gameState);
         //xSemaphoreGive(xMutexLcd);
         vTaskDelayUntil(&last, pdMS_TO_TICKS(33));
+    }
+}
+
+// Buzzer task to handle buzzer events posted by other tasks
+static void vBuzzerTask(void* pvParameters)
+{
+    BuzzerEvent event;
+
+    for(;;)
+    {
+        if (xQueueReceive(xBuzzerQueue, &event, portMAX_DELAY) == pdTRUE)
+        {
+            Buzzer_Start(event.frequency);
+            vTaskDelay(pdMS_TO_TICKS(event.duration));
+            Buzzer_Stop();
+        }
     }
 }
