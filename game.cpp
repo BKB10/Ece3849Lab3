@@ -27,8 +27,18 @@ uint8_t generatedX;
 uint8_t generatedY;
 
 bool positionHasSnake(uint8_t x, uint8_t y) {
-    for(int i = 0; i < snakeLength; i ++) {
+    for(uint8_t i = 0; i < snakeLength; i ++) {
         if(snake[i].x == x && snake[i].y == y) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool positionHasFruit(uint8_t x, uint8_t y) {
+    for(uint8_t i = 0; i < fruitSize; i ++) {
+        if(fruit[i].x == x && fruit[i].y == y) {
             return true;
         }
     }
@@ -40,7 +50,7 @@ void generateFruitTick() {
     generatedX = rand() % GRID_SIZE;
     generatedY = rand() % GRID_SIZE;
     while(gameState.isRunning && rand() < RAND_MAX / 10) {
-        if(!positionHasSnake(generatedX, generatedY)) {
+        if(!positionHasSnake(generatedX, generatedY) && !positionHasFruit(generatedX, generatedY)) {
             xSemaphoreTake(fruitMutex, portMAX_DELAY);
             fruit[fruitSize++] = Position{generatedX, generatedY};
             xSemaphoreGive(fruitMutex);
@@ -76,14 +86,14 @@ void eatFruit(uint8_t fruitIndex) {
     xSemaphoreTake(fruitMutex, portMAX_DELAY);
     fruitSize --;
     //Shift down
-    for(int i = fruitIndex; i < fruitSize; i ++) {
+    for(uint8_t i = fruitIndex; i < fruitSize; i ++) {
         fruit[i] = fruit[i + 1];
     }
     xSemaphoreGive(fruitMutex);
 }
 
 bool isColliding() {
-    for(int i = 1; i < snakeLength; i ++) {
+    for(uint8_t i = 1; i < snakeLength; i ++) {
         if(snake[0].x == snake[i].x && snake[0].y == snake[i].y) {
             return true;
         }
@@ -142,9 +152,10 @@ void moveSnake()
             Buzzer_Post(2500, 150);
         } else {
             //Check if head is covering fruit
-            for(int i = 0; i < fruitSize; i ++) {
+            for(uint8_t i = 0; i < fruitSize; i ++) {
                 if(snake[0].x == fruit[i].x && snake[0].y == fruit[i].y) {
                     eatFruit(i);
+                    break;
                 }
             }
         }

@@ -93,8 +93,8 @@ int main(void)
 
     // Create tasks (priorities per lab suggestion)
     xTaskCreate(vFruitTask, "Fruit", 512, NULL, 1, NULL);
-    xTaskCreate(vInputTask,  "Input",  512, NULL, 2, NULL);
-    xTaskCreate(vSnakeTask,  "Snake",  512, NULL, 3, NULL);
+    xTaskCreate(vInputTask,  "Input",  512, NULL, 3, NULL);
+    xTaskCreate(vSnakeTask,  "Snake",  512, NULL, 2, NULL);
     xTaskCreate(vRenderTask, "Render", 1024, NULL, 1, NULL);
     xTaskCreate(vBuzzerTask, "Buzzer", 512, NULL, 1, NULL);
 
@@ -212,6 +212,7 @@ static void vSnakeTask(void *pvParameters)
 {
     (void)pvParameters;
     ResetGame();
+
     for(;;){
         if (gameState.needsReset) {
             ResetGame();
